@@ -1,0 +1,16 @@
+{
+  "name": "@horizonai/plugin-types",
+  "version": "0.1.0",
+  "description": "TypeScript types for Horizon plugin manifest and tool API.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
