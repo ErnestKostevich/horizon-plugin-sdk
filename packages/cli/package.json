@@ -1,0 +1,28 @@
+{
+  "name": "@horizonai/plugin-cli",
+  "version": "0.1.0",
+  "description": "hz-plugin — scaffold, build and publish Horizon plugins.",
+  "bin": {
+    "hz-plugin": "bin/hz-plugin.js"
+  },
+  "main": "dist/index.js",
+  "files": ["dist", "bin", "templates"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@horizonai/plugin-types": "0.1.0",
+    "archiver": "^7.0.1",
+    "commander": "^12.0.0",
+    "kleur": "^4.1.5",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.2",
+    "@types/node": "^20.11.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.4.0"
+  }
+}

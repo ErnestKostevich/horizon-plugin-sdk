@@ -1,0 +1,20 @@
+{
+  "name": "horizon-plugin-sdk",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Types + CLI for building Horizon Genesis plugins.",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm -ws run build",
+    "typecheck": "npm -ws run typecheck"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErnestKostevich/horizon-plugin-sdk"
+  },
+  "license": "MIT",
+  "author": "Ernest Kostevich"
+}
