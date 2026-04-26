@@ -31,7 +31,7 @@ npx @horizonai/plugin-cli publish
 ## Revenue share
 
 Plugin authors keep **70%** of every sale. Horizon takes **30%**. Payouts are
-weekly in USDT (TRC20 / BSC / TON / SOL), minimum $25. See
+weekly in USDT (TRC20 / BSC / TON / SOL), minimum $5. See
 [publishing.md](./docs/publishing.md) for details.
 
 ## License
