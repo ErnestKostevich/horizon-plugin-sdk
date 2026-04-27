@@ -13,12 +13,12 @@ processing, and refunds.
 | Free plugins | allowed |
 | Author share | 70% |
 | Platform share | 30% |
-| Minimum payout | $5 |
+| Minimum payout | $25 |
 | Payout cadence | weekly |
 | Payout currencies | USDT (TRC20 / BSC / TON / SOL) |
 
 Request a payout from the Creator dashboard once your balance is at or
-above $5. Horizon batches all queued payouts on the scheduled day.
+above $25. Horizon batches all queued payouts on the scheduled day.
 
 ## Submission flow
 
