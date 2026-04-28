@@ -7,11 +7,25 @@
   },
   "main": "dist/index.js",
   "files": ["dist", "bin", "templates"],
+  "keywords": ["horizon", "horizon-ai", "plugin", "cli", "ai-agent", "marketplace"],
+  "homepage": "https://horizonaai.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErnestKostevich/horizon-plugin-sdk",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/ErnestKostevich/horizon-plugin-sdk/issues"
+  },
+  "author": "Ernest Kostevich",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "license": "MIT",
   "dependencies": {
     "@horizonai/plugin-types": "0.1.0",
     "archiver": "^7.0.1",
