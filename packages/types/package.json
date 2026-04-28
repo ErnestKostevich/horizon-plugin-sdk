@@ -1,6 +1,6 @@
 {
   "name": "@horizonai/plugin-types",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript types for Horizon plugin manifest and tool API.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   "homepage": "https://horizonaai.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ErnestKostevich/horizon-plugin-sdk",
+    "url": "git+https://github.com/ErnestKostevich/horizon-plugin-sdk.git",
     "directory": "packages/types"
   },
   "bugs": {
@@ -22,7 +22,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "typescript": "^5.4.0"
