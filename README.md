@@ -20,7 +20,8 @@
   <a href="#60-second-quick-start">Quick start</a> ·
   <a href="#what-you-can-build">What you can build</a> ·
   <a href="#revenue-share">Revenue</a> ·
-  <a href="./docs/getting-started.md">Docs</a> ·
+  <a href="./docs/getting-started.md">SDK Docs</a> ·
+  <a href="https://github.com/ErnestKostevich/Horizon-Agent-Docs">User Docs</a> ·
   <a href="./examples">Examples</a>
 </p>
 
