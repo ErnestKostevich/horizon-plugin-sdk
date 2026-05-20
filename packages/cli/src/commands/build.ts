@@ -40,7 +40,9 @@ export async function buildCommand(opts: BuildOptions): Promise<void> {
 
   zip.pipe(output);
   zip.file(manifestPath, { name: 'manifest.json' });
-  zip.file(mainPath, { name: 'main.js' });
+  // Sprint-3 — emit as handler.js to match the host loader
+  // (src/main/pluginManager.js looks for handler.js first, main.js fallback).
+  zip.file(mainPath, { name: 'handler.js' });
   for (const opt of ['icon.png', 'README.md']) {
     const p = path.join(cwd, opt);
     if (fs.existsSync(p)) zip.file(p, { name: opt });
