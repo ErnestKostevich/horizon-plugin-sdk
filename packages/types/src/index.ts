@@ -75,54 +75,89 @@ export interface JsonSchema {
 }
 
 /**
- * The shape of a tool handler. `main.js` in the bundle exports an object
- * keyed by tool name mapping to async handlers.
+ * The shape of a tool handler. Two equivalent forms are supported by the
+ * host loader (`src/main/pluginManager.js`):
  *
- * @example
+ *   A. Single `execute(toolName, args, ctx)` dispatcher — the form used by
+ *      every Horizon built-in plugin and the form the CLI scaffolder writes.
+ *
+ *   B. One exported function per tool, keyed by tool name.
+ *
+ * @example A — single execute()
  *   module.exports = {
- *     async get_weather({ city }, ctx) {
- *       const res = await ctx.fetch(`https://api.example.com/weather?city=${city}`);
- *       return res.json();
+ *     async execute(tool, args, ctx) {
+ *       if (tool === 'hello') return { ok: true, out: `Hello ${args.who}` };
+ *       return { ok: false, error: 'unknown tool' };
  *     }
  *   };
+ *
+ * @example B — one export per tool
+ *   module.exports = {
+ *     async hello({ who }, ctx) { return { message: `Hello ${who}` }; }
+ *   };
  */
-export type PluginToolHandler<TInput = Record<string, unknown>, TOutput = unknown> = (
-  input: TInput,
+export type PluginToolHandler = (
+  args: Record<string, any>,
   ctx: PluginContext,
-) => Promise<TOutput> | TOutput;
+) => Promise<any> | any;
 
-/** Runtime context passed into each handler. */
+export type PluginModule =
+  | { execute(toolName: string, args: Record<string, any>, ctx: PluginContext): Promise<any> | any }
+  | { [toolName: string]: PluginToolHandler };
+
+/**
+ * Runtime context passed into each handler.
+ *
+ * Sprint-3 — host (`src/main/pluginManager.js`) now provides the full
+ * `{ settings, fetch, logger, storage }` shape. Plugins that previously
+ * called `globalThis.fetch` / `console.log` continue to work; the
+ * ctx-bound forms are recommended because they integrate with Horizon's
+ * permission checks (fetch), per-plugin log files (logger), and
+ * persistent storage (storage).
+ */
 export interface PluginContext {
-  /** Horizon desktop version running the plugin. */
-  horizonVersion: string;
-  /** Permission-gated network fetch (CORS-free, no cookies leaked). */
-  fetch: typeof fetch;
-  /** Structured logger — surfaces in the Horizon logs UI. */
-  logger: PluginLogger;
-  /** Per-plugin key-value storage (isolated from other plugins). */
-  storage: PluginStorage;
-  /** The user-settable config the plugin exposed at install. */
-  config: Readonly<Record<string, unknown>>;
+  /** The user-settable config the plugin exposed at install (frozen — read only at runtime). */
+  settings: Readonly<Record<string, unknown>>;
+
+  /**
+   * Permission-checked HTTP client. Throws a `PermissionError` if the
+   * plugin's manifest doesn't list `network.fetch`. Same signature as the
+   * global `fetch` (node-fetch under the hood).
+   */
+  fetch: (input: string | URL, init?: Record<string, unknown>) => Promise<unknown>;
+
+  /**
+   * Per-plugin logger. Writes to `<userData>/plugin-logs/<plugin-id>.log`
+   * (1 MiB rotation) and mirrors to the host console. Use this instead of
+   * `console.*` so users can inspect plugin activity from the Plugin Hub.
+   */
+  logger: {
+    info(message: string, ...rest: unknown[]): void;
+    warn(message: string, ...rest: unknown[]): void;
+    error(message: string, ...rest: unknown[]): void;
+  };
+
+  /**
+   * Per-plugin key-value storage, backed by
+   * `<userData>/plugin-storage/<plugin-id>.json`. Synchronous, safe for
+   * small state (settings, tokens, caches). For large blobs use the
+   * filesystem with `filesystem.write` permission.
+   */
+  storage: {
+    get(key: string): unknown;
+    set(key: string, value: unknown): boolean;
+    delete(key: string): boolean;
+    all(): Record<string, unknown>;
+  };
 }
 
-export interface PluginLogger {
-  debug(msg: string, data?: unknown): void;
-  info(msg: string, data?: unknown): void;
-  warn(msg: string, data?: unknown): void;
-  error(msg: string, data?: unknown): void;
-}
-
-export interface PluginStorage {
-  get<T = unknown>(key: string): Promise<T | undefined>;
-  set(key: string, value: unknown): Promise<void>;
-  delete(key: string): Promise<void>;
-  keys(): Promise<string[]>;
-}
-
-/** Bundle layout expected on disk before zipping into a `.hzplugin`. */
+/** Bundle layout inside a `.hzplugin` zip. */
 export interface PluginBundleLayout {
   'manifest.json': PluginManifest;
-  'main.js': string;
+  /** Canonical entry filename inside the zip (SDK ≥0.1.2). */
+  'handler.js': string;
+  /** Legacy entry filename — still accepted by the host loader. */
+  'main.js'?: string;
   'icon.png'?: Uint8Array;
   'README.md'?: string;
 }
