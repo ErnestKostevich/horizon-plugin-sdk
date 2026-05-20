@@ -85,45 +85,49 @@ processes, native bindings — is fair game inside a plugin, as long as your
 
 ## A complete plugin in 30 lines
 
-```typescript
-// src/index.ts
-import type { HorizonPlugin } from '@horizonai/plugin-types';
+```javascript
+// main.js — built into handler.js inside the .hzplugin zip
+'use strict';
 
-const plugin: HorizonPlugin = {
-  name: 'currency-converter',
-  version: '0.1.0',
-  tools: [
-    {
-      name: 'currency_convert',
-      description: 'Convert an amount between two currency codes (e.g. USD→EUR).',
-      params: {
-        amount: { type: 'number', description: 'Amount in the source currency' },
-        from:   { type: 'string', description: 'ISO source code, e.g. "USD"' },
-        to:     { type: 'string', description: 'ISO target code, e.g. "EUR"' },
-      },
-      async handler({ amount, from, to }, ctx) {
-        const r = await fetch(`https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`);
-        if (!r.ok) return { ok: false, err: `HTTP ${r.status}` };
-        const j = await r.json();
-        const out = j.rates[to];
-        return { ok: true, out: `${amount} ${from} = ${out} ${to}` };
-      },
-    },
-  ],
+module.exports = {
+  async execute(tool, args, ctx) {
+    if (tool === 'currency_convert') {
+      const { amount, from, to } = args;
+      const r = await ctx.fetch(`https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`);
+      if (!r.ok) return { ok: false, error: `HTTP ${r.status}` };
+      const j = await r.json();
+      return { ok: true, out: `${amount} ${from} = ${j.rates[to]} ${to}` };
+    }
+    return { ok: false, error: `Unknown tool: ${tool}` };
+  },
 };
-
-export default plugin;
 ```
 
 `manifest.json` declares permissions:
 
 ```json
 {
-  "name": "currency-converter",
+  "id": "currency-converter",
+  "name": "Currency Converter",
   "version": "0.1.0",
   "description": "ISO currency conversion via frankfurter.app (free, no API key).",
-  "permissions": ["network:frankfurter.app"],
-  "tools": ["currency_convert"]
+  "author": "you",
+  "permissions": ["network.fetch"],
+  "tools": [
+    {
+      "name": "currency_convert",
+      "description": "Convert an amount between two currency codes (e.g. USD→EUR).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": { "type": "number", "description": "Amount in the source currency" },
+          "from":   { "type": "string", "description": "ISO source code, e.g. USD" },
+          "to":     { "type": "string", "description": "ISO target code, e.g. EUR" }
+        },
+        "required": ["amount", "from", "to"]
+      }
+    }
+  ]
 }
 ```
 
@@ -176,14 +180,18 @@ do anything.
 
 | Permission | Grants |
 |---|---|
-| `network:<host>` | Outbound HTTPS to a specific host (no wildcards) |
-| `fs:read:<path>` | Read files under a path (user-data dir or repo) |
-| `fs:write:<path>` | Write files under a path |
-| `shell` | Execute shell commands (always gates per-call too) |
-| `clipboard` | Read or write the OS clipboard |
-| `notification` | Show desktop notifications |
-| `screen` | Capture the screen or specific windows |
-| `keys:<provider>` | Read a stored API key (e.g. `keys:openai`) |
+| `network.fetch` | Outbound HTTPS via `ctx.fetch` (throws `PermissionError` if missing) |
+| `filesystem.read` | Read files under the user-data dir |
+| `filesystem.write` | Write files under the user-data dir |
+| `shell.exec` | Execute shell commands (always gates per-call too) |
+| `clipboard.read` / `clipboard.write` | Read or write the OS clipboard |
+| `notifications` | Show desktop notifications |
+| `screen.read` | Capture the screen or specific windows |
+| `mouse.control` / `keyboard.control` | Synthesize mouse / keyboard events |
+
+Legacy `colon:form` strings (`network:*`, `fs:write:userdata`, etc.) are
+still accepted on install — the host coerces them to the dotted form and
+logs a one-time deprecation warning per plugin.
 
 A plugin without permissions can do nothing destructive — it's a no-op
 until the user explicitly grants what it asks for.
