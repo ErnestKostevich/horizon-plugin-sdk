@@ -44,8 +44,26 @@ export async function initCommand(name: string, opts: InitOptions): Promise<void
     ],
   };
 
+  // Sprint-3 — scaffold writes the `execute(tool, args, ctx)` dispatcher
+  // form to match every Horizon built-in plugin. The file is named
+  // main.js for backward compatibility with older host versions; the
+  // build step renames it to handler.js inside the .hzplugin zip.
+  const handlerSource =
+`'use strict';
+
+module.exports = {
+  async execute(tool, args, ctx) {
+    if (tool === 'hello') {
+      const who = (args && args.who) || 'world';
+      return { ok: true, out: 'Hello, ' + who + '!' };
+    }
+    return { ok: false, error: 'Unknown tool: ' + tool };
+  }
+};
+`;
+
   await fs.writeFile(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-  await fs.writeFile(path.join(dir, 'main.js'), `'use strict';\n\nmodule.exports = {\n  async hello({ who }, ctx) {\n    ctx.logger.info('hello called with', { who });\n    return { message: \`Hello, \${who}!\` };\n  }\n};\n`);
+  await fs.writeFile(path.join(dir, 'main.js'), handlerSource);
   await fs.writeFile(path.join(dir, 'README.md'), `# ${manifest.name}\n\n${manifest.description}\n\nScaffolded with \`@horizonai/plugin-cli\` (${opts.template}).\n`);
   await fs.writeFile(path.join(dir, '.gitignore'), 'node_modules/\ndist/\n*.hzplugin\n');
 

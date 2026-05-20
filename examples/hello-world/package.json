@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "npx @horizonai/plugin-cli build"
+    "build": "npx @horizonai/plugin-cli build",
+    "typecheck": "node --check main.js"
   }
 }
