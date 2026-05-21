@@ -1,6 +1,20 @@
 # Manifest reference
 
-Every plugin ships a `manifest.json` at its root. Field reference:
+Every plugin ships a `manifest.json` at its root, alongside a single
+JavaScript handler. The canonical bundle layout inside a `.hzplugin` zip:
+
+```
+manifest.json    ← required, see fields below
+handler.js       ← required, exports { execute(tool, args, ctx) }
+icon.png         ← optional, 256×256 recommended
+README.md        ← optional, rendered on the marketplace listing
+```
+
+During development the handler lives at `main.js`; `hz-plugin build`
+renames it to `handler.js` inside the zip. The host loader prefers
+`handler.js` and falls back to `main.js` for legacy bundles.
+
+## Field reference
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
@@ -50,3 +64,38 @@ Older built-in plugins ship `clipboard:read`, `network:*`, `shell:exec`,
 `fs:write:userdata`, etc. The host still accepts these strings for
 backward compatibility — it emits a one-time deprecation warning in the
 main-process log on load. New plugins must use the dotted form.
+
+## Complete example
+
+```json
+{
+  "id": "currency-converter",
+  "name": "Currency Converter",
+  "version": "0.1.0",
+  "description": "ISO currency conversion via frankfurter.app.",
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": "https://example.com",
+  "category": "productivity",
+  "priceUsd": 0,
+  "minHorizonVersion": "0.6.0",
+  "permissions": ["network.fetch"],
+  "tools": [
+    {
+      "name": "currency_convert",
+      "description": "Convert an amount between two ISO currency codes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": { "type": "number", "description": "Amount in the source currency." },
+          "from":   { "type": "string", "description": "ISO source code, e.g. USD." },
+          "to":     { "type": "string", "description": "ISO target code, e.g. EUR." }
+        },
+        "required": ["amount", "from", "to"]
+      }
+    }
+  ]
+}
+```
+
+The matching `handler.js` lives in [`tools-api.md`](./tools-api.md).

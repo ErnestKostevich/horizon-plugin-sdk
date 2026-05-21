@@ -75,35 +75,42 @@ export interface JsonSchema {
 }
 
 /**
- * The shape of a tool handler. Two equivalent forms are supported by the
- * host loader (`src/main/pluginManager.js`):
+ * Canonical tool handler signature. Every Horizon built-in plugin and
+ * every plugin scaffolded by `hz-plugin init` exports this exact shape.
  *
- *   A. Single `execute(toolName, args, ctx)` dispatcher — the form used by
- *      every Horizon built-in plugin and the form the CLI scaffolder writes.
- *
- *   B. One exported function per tool, keyed by tool name.
- *
- * @example A — single execute()
+ * @example
  *   module.exports = {
  *     async execute(tool, args, ctx) {
  *       if (tool === 'hello') return { ok: true, out: `Hello ${args.who}` };
  *       return { ok: false, error: 'unknown tool' };
  *     }
  *   };
- *
- * @example B — one export per tool
- *   module.exports = {
- *     async hello({ who }, ctx) { return { message: `Hello ${who}` }; }
- *   };
+ */
+export type PluginExecuteFn = (
+  tool: string,
+  args: Record<string, unknown>,
+  ctx: PluginContext,
+) => Promise<unknown> | unknown;
+
+/**
+ * The module shape the host loader expects. The `execute()` dispatcher
+ * is canonical; the indexed legacy form `{ [toolName]: fn }` is still
+ * accepted by the host for backward compatibility but is not
+ * recommended for new plugins.
+ */
+export interface PluginModule {
+  execute: PluginExecuteFn;
+}
+
+/**
+ * @deprecated Pre-Sprint-3 per-tool function shape. Kept for plugins
+ * that still export `{ [toolName]: handler }`; new code should use
+ * `PluginExecuteFn` / `PluginModule` instead.
  */
 export type PluginToolHandler = (
-  args: Record<string, any>,
+  args: Record<string, unknown>,
   ctx: PluginContext,
-) => Promise<any> | any;
-
-export type PluginModule =
-  | { execute(toolName: string, args: Record<string, any>, ctx: PluginContext): Promise<any> | any }
-  | { [toolName: string]: PluginToolHandler };
+) => Promise<unknown> | unknown;
 
 /**
  * Runtime context passed into each handler.
@@ -121,10 +128,10 @@ export interface PluginContext {
 
   /**
    * Permission-checked HTTP client. Throws a `PermissionError` if the
-   * plugin's manifest doesn't list `network.fetch`. Same signature as the
-   * global `fetch` (node-fetch under the hood).
+   * plugin's manifest doesn't list `network.fetch`. Same signature as
+   * the global `fetch` (node-fetch under the hood).
    */
-  fetch: (input: string | URL, init?: Record<string, unknown>) => Promise<unknown>;
+  fetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
   /**
    * Per-plugin logger. Writes to `<userData>/plugin-logs/<plugin-id>.log`

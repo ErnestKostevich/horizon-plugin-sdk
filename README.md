@@ -33,33 +33,37 @@ stay in Horizon core; your plugin adds the verbs.
 
 ```
 my-plugin/
-  manifest.json       ← name, version, permissions, tool list
+  manifest.json       ← id, version, permissions, tool list
+  main.js             ← module.exports = { execute(tool, args, ctx) }
   package.json
-  src/index.ts        ← export default { tools: [...] }
   README.md
 ```
+
+The build step packs this into a `.hzplugin` zip whose canonical entry
+filename is `handler.js` (renamed from `main.js` at pack time). The host
+loader (`src/main/pluginManager.js`) loads `handler.js` first and falls
+back to `main.js` for legacy bundles.
 
 ## 60-second quick start
 
 ```bash
-# 1. Scaffold a new plugin (TypeScript, ready to build)
+# 1. Scaffold a new plugin
 npx @horizonai/plugin-cli init my-plugin
 cd my-plugin
 
-# 2. Edit src/index.ts → add a tool
-#    Type-safe via @horizonai/plugin-types
+# 2. Edit main.js — add tools dispatched from execute(tool, args, ctx)
+#    Type the ctx shape via @horizonai/plugin-types if you want strict TS.
 
-# 3. Build + dev
-npm run build              # tsc → dist/
-npm run dev                # watch mode
+# 3. Build the .hzplugin bundle
+npx @horizonai/plugin-cli build
+# → dist/my-plugin-0.1.0.hzplugin   (manifest.json + handler.js + optional README/icon)
 
 # 4. Sideload into Horizon for testing
-npx @horizonai/plugin-cli pack         # → my-plugin-0.1.0.zip
-# Then: Horizon GUI → Plugins → Install from file
+# Horizon GUI → Plugins → Install from file → pick the .hzplugin
 
 # 5. Publish to the public marketplace
-npx @horizonai/plugin-cli publish      # asks for credentials once
-# → appears on horizonaai.dev/browse, installable via `horizon://` deep links
+HORIZON_TOKEN=… npx @horizonai/plugin-cli publish
+# → uploads to horizonaai.dev/browse, enters pending_review (≤72h Phase 1)
 ```
 
 ## What you can build
@@ -133,6 +137,19 @@ module.exports = {
 
 Done. The agent picks it up automatically once installed. Users see a
 permission prompt the first time the network gets hit.
+
+### Runtime context
+
+The host passes a `ctx` object into every `execute()` call:
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `ctx.settings` | `Readonly<Record<string, unknown>>` | Frozen snapshot of the user's plugin settings (from manifest `settings[]`). |
+| `ctx.fetch(url, opts?)` | `(input, init?) => Promise<Response>` | Permission-checked HTTPS fetch — throws `PermissionError` if `network.fetch` isn't granted. |
+| `ctx.logger` | `{ info, warn, error }` | Per-plugin log to `<userData>/plugin-logs/<id>.log` (rotates at 1 MiB) plus host console mirror. |
+| `ctx.storage` | `{ get, set, delete, all }` | Persistent KV store backed by `<userData>/plugin-storage/<id>.json`. Synchronous, JSON-serialisable values. |
+
+See [`docs/tools-api.md`](./docs/tools-api.md) for the full contract.
 
 ## Examples
 
@@ -213,12 +230,18 @@ until the user explicitly grants what it asks for.
 
 - [x] TypeScript types
 - [x] `hz-plugin init` scaffolder
-- [x] `hz-plugin pack` / `publish` flow
+- [x] `hz-plugin build` / `publish` flow
 - [x] Marketplace with crypto payouts
 - [ ] Rust plugin runtime (compile to wasm)
 - [ ] Python plugin runtime (via embedded interpreter)
 - [ ] Signed releases (Sigstore)
 - [ ] Plugin telemetry opt-in dashboard
+
+## Related projects
+
+- **Main Horizon app** — [ErnestKostevich/horizon-genesis](https://github.com/ErnestKostevich/horizon-genesis) — the desktop client your plugin runs inside.
+- **User-facing docs** — [horizonaai.dev/docs](https://horizonaai.dev/docs) — guides written for end users, sourced from [ErnestKostevich/Horizon-Agent-Docs](https://github.com/ErnestKostevich/Horizon-Agent-Docs).
+- **Marketplace** — [horizonaai.dev/browse](https://horizonaai.dev/browse) — where your built `.hzplugin` lands after `hz-plugin publish`.
 
 ## Community
 
